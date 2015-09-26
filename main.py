@@ -50,6 +50,11 @@ def createNBClassifier(data):
         for d in data:
             if d['class'] == true_label:
                 probset[d[k]] = probset.get(d[k], 0) + 1
+            else:
+                probset[d[k]] = probset.get(d[k], 0) + 0
+
+        #print "Feature ", k, " has ", len(probset.keys())
+        #if len(probset.keys()) < 
 
         # convert to probabilities
         for p in probset.keys():
@@ -58,12 +63,40 @@ def createNBClassifier(data):
         # add it master dict
         classifier[k] = probset
 
+
+    # add true and false labels
+    classifier['true'] = true_label
+    classifier['false'] = false_label
+
+    #print classifier
     return classifier
+
+def runNBClassifier(classifier, testdata):
+    """ Run the classifier and return the class."""
+
+    prob_true = 1.0
+    prob_false = 1.0
+
+    for k in testdata.keys():
+       if k == 'class':
+           continue
+       prob_true = prob_true * classifier[k][testdata[k]] 
+       prob_false = prob_false * (1.0 - classifier[k][testdata[k]])
+
+    if prob_true > prob_false:
+        return classifier['true']
+    else:
+        return classifier['false']
 
 def main():
     """Main entry point."""
     data = loadData("breast-cancer.libsvm")
     classifier = createNBClassifier(data)
+
+    for i in range(0, 100):
+        print i
+        print "Actual : ", data[i]['class']
+        print "Predicted :", runNBClassifier(classifier, data[i])
 
 if __name__ == "__main__":
     main()
