@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+import random
 
 def loadData(filename):
     """Load data from filename and return in dict format."""
@@ -66,7 +67,7 @@ def createNBClassifier(data):
                 probset['true'][d[k]] = probset['true'].get(d[k], 0) + 0
 
         # arbitrary cutoff to decide when the number of keys are too many
-        if len(probset.keys()) > 0.3*len(data):
+        if len(probset['true'].keys() + probset['false'].keys()) > 0.3*len(data):
             # too many keys present
             # discrete probability does not make sense
             # we need to model a gaussian distribution
@@ -136,15 +137,59 @@ def runNBClassifier(classifier, testdata):
     else:
         return classifier['false']
 
+def testNBClassifier(classifier, testdata):
+    """ Give correctly classified percentage.
+
+    testdata -- is a list of data
+    """
+    correct = 0
+    total = len(testdata)
+
+    for t in testdata:
+        if t['class'] == runNBClassifier(classifier, t):
+            correct  = correct + 1
+
+    return correct*100.0/total
+
+def kFoldCrossValidation(data, k):
+    """ Return k-fold cross validation accuracy. 
+    
+    data -- list of data points
+    k - fold number
+    """
+    random.shuffle(data)
+    res = []
+    _k = len(data) // k
+
+    for i in range(0, len(data), _k):
+        # split the data into test and training
+        test = data[i:min(i+_k, len(data))]
+        training = data[:i] + data[min(i+_k, len(data)):]
+
+        classifier = createNBClassifier(training)
+        res.append(testNBClassifier(classifier, test))
+
+    res = np.array(res)
+    return np.mean(res)
+
 def main():
     """Main entry point."""
     data = loadData("breast-cancer.libsvm")
     classifier = createNBClassifier(data)
 
+    # sample test
+    """
     for i in range(0, 100):
         print i
         print "Actual : ", data[i]['class']
         print "Predicted :", runNBClassifier(classifier, data[i])
+    """
+
+    print "k fold cross validation accuracy: "
+
+    print "3: ", kFoldCrossValidation(data, 3)
+    print "5: ", kFoldCrossValidation(data, 5)
+    print "10:", kFoldCrossValidation(data, 10)
 
 if __name__ == "__main__":
     main()
