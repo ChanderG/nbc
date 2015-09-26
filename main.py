@@ -54,12 +54,16 @@ def createNBClassifier(data):
 
     for k in keys:
         probset = {}
+        probset['true'] = {}
+        probset['false'] = {}
 
         for d in data:
             if d['class'] == true_label:
-                probset[d[k]] = probset.get(d[k], 0) + 1
+                probset['true'][d[k]] = probset['true'].get(d[k], 0) + 1
+                probset['false'][d[k]] = probset['false'].get(d[k], 0) + 0
             else:
-                probset[d[k]] = probset.get(d[k], 0) + 0
+                probset['false'][d[k]] = probset['false'].get(d[k], 0) + 1
+                probset['true'][d[k]] = probset['true'].get(d[k], 0) + 0
 
         # arbitrary cutoff to decide when the number of keys are too many
         if len(probset.keys()) > 0.3*len(data):
@@ -92,8 +96,10 @@ def createNBClassifier(data):
             probset['gaussian'] = False
 
             # convert to probabilities
-            for p in probset.keys():
-                probset[p] = float(probset[p])/totalnos
+            for p in probset['true'].keys():
+                probset[p] = float(probset['true'][p])/totalnos
+            for p in probset['false'].keys():
+                probset[p] = float(probset['false'][p])/totalnos
 
         # add it master dict
         classifier[k] = probset
@@ -116,8 +122,8 @@ def runNBClassifier(classifier, testdata):
        if k == 'class':
            continue
        if classifier[k]['gaussian'] == False:
-           prob_true = prob_true * classifier[k][testdata[k]] 
-           prob_false = prob_false * (1.0 - classifier[k][testdata[k]])
+           prob_true = prob_true * classifier[k]['true'][testdata[k]] 
+           prob_false = prob_false * classifier[k]['false'][testdata[k]]
 
        else:
            # alternative method to calculate probability
